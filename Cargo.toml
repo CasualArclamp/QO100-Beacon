@@ -1,7 +1,7 @@
 # made by CasualArclamp
 [package]
 name = "qo100-beacon"
-description = "QO-100's 400 bit/s PSK beacon from a sound card: frames, text and housekeeping values"
+description = "QO-100's PSK and multimedia beacons from a sound card: frames, text, telemetry, waterfalls and bulletins"
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
@@ -12,6 +12,8 @@ rust-version = "1.95"
 [dependencies]
 num-complex = "0.4.6"
 rustfft = "6.4"
+# Inflate, for the ZIP archives the multimedia beacon sends its files in.
+flate2 = "1"
 cpal = "0.18.2"
 # The glow (OpenGL) renderer: much smaller than wgpu.
 eframe = { version = "0.36.2", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
