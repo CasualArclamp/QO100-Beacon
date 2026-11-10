@@ -1,0 +1,7 @@
+# made by CasualArclamp
+/target
+/out
+# Portable builds; published on GitHub releases instead.
+/exe
+# Recordings are never committed.
+*.wav

@@ -1,0 +1,36 @@
+# made by CasualArclamp
+[package]
+name = "qo100-beacon"
+description = "QO-100's 400 bit/s PSK beacon from a sound card: frames, text and housekeeping values"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/CasualArclamp/QO100-Beacon"
+# eframe/egui 0.36 need Rust 1.95.
+rust-version = "1.95"
+
+[dependencies]
+num-complex = "0.4.6"
+rustfft = "6.4"
+cpal = "0.18.2"
+# The glow (OpenGL) renderer: much smaller than wgpu.
+eframe = { version = "0.36.2", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+# Native file dialog for opening a recording.
+rfd = "0.17.2"
+# PNG output for --screenshot.
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+
+# eframe's defaults turn on winit's defaults; with them off they come back
+# here (Linux only), so building needs no X11/Wayland dev packages.
+[target.'cfg(target_os = "linux")'.dependencies]
+winit = "0.30.13"
+
+# DSP is slow unoptimised: keep debug builds usable.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
