@@ -41,6 +41,7 @@ usage: qo100-beacon [options]
   --speed N                          a recording's speed, 1 = real time (default 1)
   --multimedia                       open on the multimedia beacon's page (10489.995 MHz)
   --screenshot PATH.png [--after S]  save the window after S seconds and quit
+  --record PATH.mp4 [--after S]      film the window for S seconds (default 20) and quit; needs ffmpeg
   --size WxH                         the window's size";
 
 /// The command line.
@@ -51,6 +52,7 @@ pub struct Options {
     pub speed: Option<f64>,
     pub multimedia: bool,
     pub screenshot: Option<PathBuf>,
+    pub record: Option<PathBuf>,
     pub after: Option<f64>,
     pub size: Option<(u32, u32)>,
 }
@@ -68,6 +70,7 @@ fn parse(args: impl Iterator<Item = String>) -> Result<Options, String> {
             }
             "--multimedia" => o.multimedia = true,
             "--screenshot" => o.screenshot = Some(PathBuf::from(val("--screenshot")?)),
+            "--record" => o.record = Some(PathBuf::from(val("--record")?)),
             "--after" => {
                 o.after = Some(val("--after")?.parse().map_err(|_| "--after S")?);
             }
