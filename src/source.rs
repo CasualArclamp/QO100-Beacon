@@ -12,6 +12,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::Iq;
+use crate::hsmodemrx::{HsRx, HsView};
 use crate::p3beacon::P3Frame;
 use crate::p3rx::{P3Rx, P3View};
 use crate::wav::WavReader;
@@ -42,6 +43,10 @@ pub struct LogLine {
 #[derive(Default)]
 pub struct Shared {
     pub view: P3View,
+    /// The multimedia beacon (10489.995 MHz), read from the same samples,
+    /// and its latest constellation points.
+    pub hs: HsView,
+    pub hs_points: VecDeque<Iq>,
     /// Constellation points the window has not yet drawn, oldest first.
     pub points: VecDeque<Iq>,
     /// The waterfall's colour range, dB (low, high): see [`Levels`].
@@ -256,6 +261,7 @@ fn decode(
     live: bool,
 ) {
     let mut p3 = P3Rx::new(rate);
+    let mut hs = HsRx::new(rate);
     let mut spectrum = Spectrum::new(rate);
     let mut levels = Levels::default();
     let mut power = 0.0f32;
@@ -292,10 +298,17 @@ fn decode(
             s.new_rows.drain(..extra);
         }
         p3.push(&block);
+        hs.push(&block);
+        let hs_points = hs.take_points();
         let points = p3.take_points();
         let due = last_publish.elapsed().as_millis() >= 100;
-        if !points.is_empty() || due {
+        if !points.is_empty() || !hs_points.is_empty() || due {
             let mut s = shared.lock().unwrap();
+            // A page that is not on show does not take its points: only
+            // the latest few seconds are kept.
+            s.hs_points.extend(hs_points);
+            let extra = s.hs_points.len().saturating_sub(8000);
+            s.hs_points.drain(..extra);
             s.points.extend(points);
             let extra = s.points.len().saturating_sub(4000);
             s.points.drain(..extra);
@@ -327,13 +340,16 @@ fn decode(
             }
             s.log.truncate(LOG);
             s.view = v;
+            s.hs = hs.view();
             s.version += 1;
         }
     }
     p3.finish();
+    hs.finish();
     let v = p3.view();
     let mut s = shared.lock().unwrap();
     s.view = v;
+    s.hs = hs.view();
     s.version += 1;
     s.ended = true;
 }

@@ -6,11 +6,19 @@
 //! the beacon anywhere from about 300 Hz to 3.7 kHz; the frames are found
 //! and shown by [`p3rx`], the receiver DecSAT uses
 //! (<https://github.com/CasualArclamp/DecSAT>).
+//!
+//! Its second page is the multimedia beacon at 10489.995 MHz (2400 baud
+//! 8APSK, [`hsmodemrx`]): tune so the signal's centre is near 2.6 kHz of
+//! audio (USB, dial about 10489.9924 MHz) with a filter at least 4 kHz
+//! wide. Both are looked for all the time.
 
 mod ao40;
 mod ccsds;
 mod gauges;
 mod heatmap;
+mod hsmodem;
+mod hsmodemrx;
+mod multimedia;
 mod p3beacon;
 mod p3fec;
 mod p3rx;
@@ -31,6 +39,7 @@ usage: qo100-beacon [options]
   --device NAME                      start on this sound input
   --file PATH.wav                    play a recording instead (mono audio or IQ)
   --speed N                          a recording's speed, 1 = real time (default 1)
+  --multimedia                       open on the multimedia beacon's page (10489.995 MHz)
   --screenshot PATH.png [--after S]  save the window after S seconds and quit
   --size WxH                         the window's size";
 
@@ -40,6 +49,7 @@ pub struct Options {
     pub device: Option<String>,
     pub file: Option<PathBuf>,
     pub speed: Option<f64>,
+    pub multimedia: bool,
     pub screenshot: Option<PathBuf>,
     pub after: Option<f64>,
     pub size: Option<(u32, u32)>,
@@ -56,6 +66,7 @@ fn parse(args: impl Iterator<Item = String>) -> Result<Options, String> {
             "--speed" => {
                 o.speed = Some(val("--speed")?.parse().map_err(|_| "--speed N")?);
             }
+            "--multimedia" => o.multimedia = true,
             "--screenshot" => o.screenshot = Some(PathBuf::from(val("--screenshot")?)),
             "--after" => {
                 o.after = Some(val("--after")?.parse().map_err(|_| "--after S")?);
