@@ -24,6 +24,8 @@ arrives; the bars turn green when the CRC and the FEC block check.
 - After each frame the beacon repeats the first half of the block with
   error correction. That FEC block is decoded too, and fills in when a
   frame is missed or fails its CRC.
+- Old recordings of AO-40 (the same format) decode too, with its
+  voltages, currents, temperatures and spin read from the A block.
 
 ## Build
 
