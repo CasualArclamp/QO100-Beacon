@@ -17,6 +17,8 @@ arrives; the bars turn green when the CRC and the FEC block check.
 
 ## The multimedia beacon
 
+![The multimedia page: both transponders' waterfalls, the constellation, Es/N0, BER and the tuning display](docs/multimedia.png)
+
 The second page, **Multimedia beacon**, reads the 2400 baud 8APSK beacon at
 10489.995 MHz (AMSAT-DL's HSmodem by DJ0ABR): the two transponders'
 waterfalls, DX spots and the AMSAT bulletins it sends as files.
