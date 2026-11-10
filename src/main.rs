@@ -13,6 +13,7 @@
 //! wide. Both are looked for all the time.
 
 mod ao40;
+mod bulletin;
 mod ccsds;
 mod gauges;
 mod heatmap;
