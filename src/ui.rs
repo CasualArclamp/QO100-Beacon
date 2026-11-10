@@ -82,7 +82,17 @@ pub struct App {
     stats: Stats,
     started: Instant,
     shot_sent: bool,
+    /// `--record`: the thread feeding ffmpeg the frames, and frames asked
+    /// for.
+    film: Option<Film>,
+    film_frames: u64,
 }
+
+/// The frames' way to the thread that writes them to ffmpeg, and the thread.
+type Film = (
+    std::sync::mpsc::SyncSender<std::sync::Arc<ColorImage>>,
+    std::thread::JoinHandle<()>,
+);
 
 /// Where the chosen sound input is remembered.
 fn prefs_path() -> Option<PathBuf> {
@@ -123,6 +133,8 @@ impl App {
             stats: Stats::new(),
             started: Instant::now(),
             shot_sent: false,
+            film: None,
+            film_frames: 0,
             opts,
         };
         if let Some(file) = app.opts.file.clone() {
@@ -183,6 +195,90 @@ impl App {
         self.points.drain(..n).collect()
     }
 
+    /// `--record PATH.mp4`: the window's own frames, 60 a second by the
+    /// clock, piped to ffmpeg; then quit. (Filming the screen from outside
+    /// would show whatever else is on it.)
+    fn record(&mut self, ctx: &egui::Context) {
+        const FPS: f64 = 60.0;
+        let Some(path) = self.opts.record.clone() else {
+            return;
+        };
+        let images: Vec<_> = ctx.input(|i| {
+            i.raw
+                .events
+                .iter()
+                .filter_map(|e| match e {
+                    egui::Event::Screenshot { image, .. } => Some(image.clone()),
+                    _ => None,
+                })
+                .collect()
+        });
+        for image in images {
+            if self.film.is_none() {
+                // The first frame says how big they are.
+                let size = format!("{}x{}", image.size[0], image.size[1]);
+                let spawned = std::process::Command::new("ffmpeg")
+                    .args(["-y", "-loglevel", "error", "-probesize", "32"])
+                    .args([
+                        "-analyzeduration",
+                        "0",
+                        "-f",
+                        "rawvideo",
+                        "-pix_fmt",
+                        "rgba",
+                    ])
+                    .args(["-s", &size, "-r", "60", "-i", "-"])
+                    // x264 wants even sizes.
+                    .args(["-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-c:v", "libx264"])
+                    .args(["-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p"])
+                    .arg(&path)
+                    .stdin(std::process::Stdio::piped())
+                    .spawn();
+                let mut child = match spawned {
+                    Ok(child) => child,
+                    Err(e) => {
+                        eprintln!("cannot run ffmpeg: {e}");
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                        return;
+                    }
+                };
+                // A thread writes the frames, so a slow pipe never holds
+                // the window up. When the sender goes the loop ends and the
+                // pipe is dropped, which tells ffmpeg the film is over.
+                let (tx, rx) = std::sync::mpsc::sync_channel::<std::sync::Arc<ColorImage>>(240);
+                let writer = std::thread::spawn(move || {
+                    use std::io::Write;
+                    if let Some(mut pipe) = child.stdin.take() {
+                        for frame in rx {
+                            if pipe.write_all(frame.as_raw()).is_err() {
+                                break;
+                            }
+                        }
+                    }
+                    let _ = child.wait();
+                });
+                self.film = Some((tx, writer));
+            }
+            if let Some((tx, _)) = &self.film {
+                let _ = tx.send(image);
+            }
+        }
+        let t = self.started.elapsed().as_secs_f64();
+        if t >= self.opts.after.unwrap_or(20.0) {
+            if let Some((tx, writer)) = self.film.take() {
+                drop(tx);
+                let _ = writer.join();
+            }
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            return;
+        }
+        // One frame for each sixtieth of a second gone by.
+        if (t * FPS) as u64 >= self.film_frames {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
+            self.film_frames = (t * FPS) as u64 + 1;
+        }
+    }
+
     fn screenshot(&mut self, ctx: &egui::Context) {
         let Some(path) = self.opts.screenshot.clone() else {
             return;
@@ -211,6 +307,7 @@ impl App {
 impl eframe::App for App {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.screenshot(ctx);
+        self.record(ctx);
         // Every frame: the waterfall and the constellation move at the
         // display's rate.
         ctx.request_repaint();
