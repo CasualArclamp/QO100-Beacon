@@ -2,7 +2,7 @@
 [package]
 name = "qo100-beacon"
 description = "QO-100's PSK and multimedia beacons from a sound card: frames, text, telemetry, waterfalls and bulletins"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/CasualArclamp/QO100-Beacon"
