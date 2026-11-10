@@ -1,7 +1,7 @@
 // made by CasualArclamp
 // Kept the same as DecSAT's copy (crates/decsat-modem), which uses more
 // of it than this app does.
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 //! AMSAT's 400 bit/s PSK beacon frames: AO-40's uncoded format, which
 //! QO-100's (Es'hail 2) P4-A narrow-band beacons send too.
 //!
@@ -71,9 +71,19 @@ pub struct P3Frame {
     pub sync_errors: u32,
     /// Bits received before this frame's first (after its sync word).
     pub bit_index: u64,
+    /// From the FEC block ([`crate::p3fec`]): the block's first 256 bytes,
+    /// vouched for by its Reed–Solomon code rather than a CRC.
+    pub fec: bool,
+    /// Bytes that code put right.
+    pub fec_corrected: usize,
 }
 
 impl P3Frame {
+    /// Checked good: by its CRC, or by the FEC block's code.
+    pub fn verified(&self) -> bool {
+        self.crc_ok || self.fec
+    }
+
     /// The block's name, its first byte, when that is a letter.
     pub fn block(&self) -> Option<char> {
         self.bytes
@@ -230,6 +240,8 @@ impl Deframer {
             crc_ok: false,
             sync_errors,
             bit_index: self.bits,
+            fec: false,
+            fec_corrected: 0,
         });
         self.byte = 0;
         self.byte_bits = 0;

@@ -7,9 +7,11 @@
 //! and shown by [`p3rx`], the receiver DecSAT uses
 //! (<https://github.com/CasualArclamp/DecSAT>).
 
+mod ccsds;
 mod gauges;
 mod heatmap;
 mod p3beacon;
+mod p3fec;
 mod p3rx;
 mod sat;
 mod source;

@@ -13,7 +13,7 @@ from a sound card or a WAV recording.
    **Open recording…** for a WAV file.
 
 A frame takes 10 seconds and one comes every 25. Its text appears as it
-arrives; the bar turns green when the CRC checks.
+arrives; the bars turn green when the CRC and the FEC block check.
 
 ## Good to know
 
@@ -21,7 +21,9 @@ arrives; the bar turns green when the CRC checks.
   temperature if it sends them again, as it did in 2019. Their green bands
   are set around those 2019 values; AMSAT has not published the real limits.
 - The satellite picture is worked out from the time, not from telemetry.
-- The FEC block between frames is not decoded.
+- After each frame the beacon repeats the first half of the block with
+  error correction. That FEC block is decoded too, and fills in when a
+  frame is missed or fails its CRC.
 
 ## Build
 
