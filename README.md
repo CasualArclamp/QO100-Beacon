@@ -1,5 +1,7 @@
 # QO-100 Beacon
 
+[![release](https://img.shields.io/github/v/release/CasualArclamp/QO100-Beacon?logo=github&label=release)](https://github.com/CasualArclamp/QO100-Beacon/releases/latest) [![downloads](https://img.shields.io/github/downloads/CasualArclamp/QO100-Beacon/total?logo=github&label=downloads)](https://github.com/CasualArclamp/QO100-Beacon/releases)
+
 Decodes the 400 bit/s PSK beacon of the QO-100 (Es'hail 2) amateur satellite,
 and its 2400 baud multimedia beacon, from a sound card or a WAV recording.
 
