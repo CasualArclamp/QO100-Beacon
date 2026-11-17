@@ -5,3 +5,5 @@
 /exe
 # Recordings are never committed.
 *.wav
+# Notes for Claude Code sessions: local only
+CLAUDE.md
